@@ -1,5 +1,7 @@
-opencv-python
+streamlit
 torch
 torchvision
+Pillow
+opencv-python
+requests
 numpy
-pillow

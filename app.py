@@ -21,7 +21,7 @@ st.markdown(
 )
 
 # ----------------- Model Download Setup -----------------
-MODEL_URL = "https://drive.google.com/uc?id=1DF72bjGVnN6iNJrv6B18XulSdiCHBYtR"
+MODEL_URL = "https://drive.google.com/uc?id=1hjMmDWjWpJK4ewXWmEAr4i5Aq6newfIC"
 MODEL_PATH = os.path.join("models", "face_recognition_model.pth")
 
 # Ensure the models folder exists

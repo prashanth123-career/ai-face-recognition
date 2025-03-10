@@ -1,14 +1,13 @@
 import streamlit as st
 import torch
 import torchvision.transforms as transforms
-import cv2
-from PIL import Image
 import os
 import requests
 import time
-import sys
+from PIL import Image
+import torch.nn as nn
 
-# --- CareerUpskillers Branding ---
+# ---------------- CareerUpskillers Branding ----------------
 st.set_page_config(page_title="AI Face Recognition - CareerUpskillers", page_icon="🤖")
 st.markdown(
     """
@@ -20,14 +19,12 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# --- Model Download Setup ---
+# ---------------- Model Download Setup ----------------
 MODEL_URL = "https://drive.google.com/uc?id=1DF72bjGVnN6iNJrv6B18XulSdiCHBYtR"
-MODEL_PATH = "models/face_recognition_model.pth"
+MODEL_PATH = os.path.join("models", "face_recognition_model.pth")
 
-# Ensure models folder exists
 os.makedirs("models", exist_ok=True)
 
-# Download the model if it does not exist
 if not os.path.exists(MODEL_PATH):
     st.info("🔄 Downloading model... Please wait.")
     try:
@@ -47,12 +44,7 @@ if not os.path.exists(MODEL_PATH):
         st.error(f"❌ Exception during download: {e}")
         st.stop()
 
-# --- Load the Trained Model ---
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-# Define your model architecture (must match the training script)
-import torch.nn as nn
-
+# ---------------- Model Definition ----------------
 class FaceRecognitionModel(nn.Module):
     def __init__(self, num_classes):
         super(FaceRecognitionModel, self).__init__()
@@ -62,7 +54,7 @@ class FaceRecognitionModel(nn.Module):
         self.fc2 = nn.Linear(128, num_classes)
         self.relu = nn.ReLU()
         self.pool = nn.MaxPool2d(2, 2)
-
+        
     def forward(self, x):
         x = self.pool(self.relu(self.conv1(x)))
         x = self.pool(self.relu(self.conv2(x)))
@@ -71,8 +63,9 @@ class FaceRecognitionModel(nn.Module):
         x = self.fc2(x)
         return x
 
-# Set the dataset folder for class names
-DATASET_PATH = "data_face_recognition/known"  # Folder that contains known face images
+# ---------------- Load Dataset Classes ----------------
+# Use the training folder that was used during training
+DATASET_PATH = os.path.join("train")
 if os.path.exists(DATASET_PATH):
     classes = sorted(os.listdir(DATASET_PATH))
 else:
@@ -80,6 +73,8 @@ else:
 
 num_classes = len(classes)
 
+# ---------------- Load the Trained Model ----------------
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = FaceRecognitionModel(num_classes=num_classes).to(device)
 
 if os.path.exists(MODEL_PATH):
@@ -89,14 +84,14 @@ else:
     st.error(f"❌ Model file '{MODEL_PATH}' not found!")
     st.stop()
 
-# --- Define Image Transformations ---
+# ---------------- Define Image Transformations ----------------
 transform = transforms.Compose([
     transforms.Resize((64, 64)),
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
 ])
 
-# --- Streamlit UI for Image Upload and Prediction ---
+# ---------------- Streamlit UI ----------------
 st.header("📤 Upload an Image for Face Recognition")
 uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
 
@@ -104,7 +99,6 @@ if uploaded_file:
     image = Image.open(uploaded_file)
     st.image(image, caption="Uploaded Image", use_column_width=True)
     
-    # Prepare image for model
     img_tensor = transform(image).unsqueeze(0).to(device)
     
     with torch.no_grad():
@@ -114,7 +108,7 @@ if uploaded_file:
     label = classes[predicted_class] if predicted_class < len(classes) else "Unknown"
     st.success(f"✅ Prediction: {label}")
 
-# --- Footer Branding ---
+# ---------------- Footer Branding ----------------
 st.markdown(
     """
     <hr style="border:1px solid #ff5733;">
